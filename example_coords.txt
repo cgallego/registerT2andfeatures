@@ -1,0 +1,173 @@
+DICOM BILATERAL MINE
+Compute: Position, Orientation, matrix, & Volume Origin
+['152.158', '-157.893', '112.697']
+['-0', '1', '0', '-0', '-0', '-1']
+[[   0    1    0  152]
+ [   0    0   -1 -157]
+ [  -1    0    0  112]
+ [   0    0    0    1]]
+-157.0 -112.0 -152.0
+Image Dimensions
+(512, 512, 104)
+Image Extension
+0 511 0 511 0 103
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, -152.0)
+Image Dimensions
+(512, 512, 104)
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, -152.0)
+Image Extent
+[0, 511, 0, 511, 0, 103]
+
+
+
+---------------------------------
+S600_Right.mha
+orientation from most left slice in Right subfolder [-6.84, -157.89, 112.69]
+Compute: Position, Orientation, matrix, & Volume Origin
+[-6.84, -157.89, 112.69]
+['-0', '1', '0', '-0', '-0', '-1']
+[[   0    1    0   -6]
+ [   0    0   -1 -157]
+ [  -1    0    0  112]
+ [   0    0    0    1]]
+-157.0 -112.0 6.0
+Image Dimensions
+(512, 512, 51)
+Image Extension
+0 511 0 511 0 50
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, 6.0)
+Image Dimensions
+(512, 512, 51)
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, 6.0)
+Image Extent
+[0, 511, 0, 511, 0, 50]
+
+
+---------------------------------
+S600_Left.mha
+Compute: Position, Orientation, matrix, & Volume Origin
+['152.158', '-157.893', '112.697']
+['-0', '1', '0', '-0', '-0', '-1']
+[[   0    1    0  152]
+ [   0    0   -1 -157]
+ [  -1    0    0  112]
+ [   0    0    0    1]]
+-157.0 -112.0 -152.0
+Image Dimensions
+(512, 512, 52)
+Image Extension
+0 511 0 511 0 51
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, -152.0)
+Image Dimensions
+(512, 512, 52)
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, -152.0)
+Image Extent
+[0, 511, 0, 511, 0, 51]
+
+---------------------------------
+S4.mha
+Compute: Position, Orientation, matrix, & Volume Origin
+[-6.84, -157.89, 112.69]
+['-0', '1', '0', '-0', '-0', '-1']
+[[   0    1    0   -6]
+ [   0    0   -1 -157]
+ [  -1    0    0  112]
+ [   0    0    0    1]]
+-157.0 -112.0 6.0
+Image Dimensions
+(512, 512, 51)
+Image Extension
+0 511 0 511 0 50
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, 6.0)
+Image Dimensions
+(512, 512, 51)
+Image Spacing
+(0.41019999980926514, 0.41019999980926514, 3.0)
+Image Origin
+(-157.0, -112.0, 6.0)
+Image Extent
+[0, 511, 0, 511, 0, 50]
+
+--------------------------------
+TESTING
+--------------------------------
+from sendNew2_registerdatabase import *
+file_ids = open("viewStage1T2updatedFeatures.txt",'r')
+line = file_ids.readline()
+print line
+fileline = line.split()
+lesion_id = int(fileline[0] )
+StudyID = fileline[1] 
+PatientID = fileline[2]  
+dateID = fileline[3]
+Diagnosis = fileline[4:]
+
+SendNew2DB = SendregisterNew()
+[img_folder, cond, BenignNMaligNAnt, Diagnosis, casesFrame, MorNMcase, T2info] = SendNew2DB.querylocalDatabase(lesion_id)        
+        
+AccessionN = casesFrame['exam_a_number_txt']
+DicomExamNumber = casesFrame['exam_img_dicom_txt']
+## for old DicomExamNumber         
+#AccessionN = DicomExamNumber
+dateID = casesFrame['exam_dt_datetime']
+if 'proc_proc_side_int' in casesFrame.keys():
+    finding_side = casesFrame['proc_proc_side_int']
+else:
+    finding_side = casesFrame['exam_find_side_int ']
+
+pathSegment = 'C:\Users\windows\Documents'+os.sep+'repoCode-local'+os.sep+'addnewLesion'+os.sep+'segmentations'
+nameSegment = casesFrame['lesionfile'] 
+DynSeries_id = MorNMcase['DynSeries_id']
+T2Series_id = MorNMcase['T2Series_id']
+
+#############################                  
+###### 2) Check segmentation accuracy with annotations
+#############################       
+print "\n Preload volumes and segmentation..."
+[series_path, phases_series] = SendNew2DB.preloadSegment(img_folder, lesion_id, StudyID, AccessionN, DynSeries_id, pathSegment, nameSegment)
+
+print "\n Visualize and load..."
+SendNew2DB.loadSegment(pathSegment, nameSegment)
+
+DicomDirectory = img_folder+os.sep+str(int(StudyID))+os.sep+AccessionN
+if not os.path.exists(DicomDirectory):
+    DicomDirectory = img_folder+os.sep+str(int(StudyID))+os.sep+DicomExamNumber
+ 
+DynSeries_id = MorNMcase['DynSeries_id']
+T2Series_id = MorNMcase['T2Series_id']
+
+mhaDirectory = DicomDirectory
+fixed_path =  DicomDirectory+os.sep+DynSeries_id+'_'+finding_side+'.mha'
+moving_path =  DicomDirectory+os.sep+T2Series_id+'.mha'
+
+SendNew2DB.Right_pos_pat=[-6.84, -157.89, 112.69]
+SendNew2DB.Right_ori_pat=[-0, 1, 0, -0, -0, -1]
+
+if(finding_side=='Right'):
+    SendNew2DB.warpT2_pos_pat, SendNew2DB.warpT2_ori_pat = [SendNew2DB.Right_pos_pat, SendNew2DB.Right_ori_pat]
+                     
+
+    SendNew2DB.loadDisplay.visualizemha(fixed_path, moving_path, SendNew2DB.warpT2_pos_pat, SendNew2DB.warpT2_ori_pat, interact=True)
+        
+
